@@ -4,77 +4,81 @@ const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
 const selectedProducts = [];
 
+// Initial placeholder
 productsContainer.innerHTML = `<div class="placeholder-message">Select a category to view products</div>`;
 
+/* Load product data */
 async function loadProducts() {
   const response = await fetch("products.json");
   const data = await response.json();
   return data.products;
 }
 
+/* Display products */
 function displayProducts(products) {
   productsContainer.innerHTML = products
     .map((product) => {
       const isSelected = selectedProducts.some((p) => p.id === product.id);
       return `
-      <div class="product-card ${isSelected ? "selected" : ""}" data-id="${product.id}">
-        <div class="product-overlay">${product.description}</div>
-        <img src="${product.image}" alt="${product.name}">
-        <div class="product-info">
-          <h3>${product.name}</h3>
-          <p>${product.brand}</p>
-          <button class="toggle-btn">View Details</button>
-          <div class="description-full">${product.description}</div>
+        <div class="product-card ${isSelected ? "selected" : ""}" data-id="${product.id}">
+          <div class="product-overlay">${product.description}</div>
+          <img src="${product.image}" alt="${product.name}">
+          <div class="product-info">
+            <h3>${product.name}</h3>
+            <p>${product.brand}</p>
+            <button class="toggle-btn">View Details</button>
+            <div class="description-full">${product.description}</div>
+          </div>
         </div>
-      </div>
-    `;
+      `;
     })
     .join("");
 
+  // Product selection logic
   document.querySelectorAll(".product-card").forEach((card) => {
     const productId = parseInt(card.dataset.id);
     const product = products.find((p) => p.id === productId);
-    const index = selectedProducts.findIndex((p) => p.id === productId);
 
     card.addEventListener("click", (e) => {
-      // Prevent toggling on button clicks
       if (e.target.classList.contains("toggle-btn")) return;
 
+      const index = selectedProducts.findIndex((p) => p.id === productId);
       if (index === -1) {
         selectedProducts.push(product);
       } else {
         selectedProducts.splice(index, 1);
       }
-
       displayProducts(products);
       updateSelectedList();
     });
   });
 
+  // Toggle description
   document.querySelectorAll(".toggle-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent triggering product card select
+      e.stopPropagation();
       const card = e.target.closest(".product-card");
       card.classList.toggle("expanded");
     });
   });
 }
 
-
+/* Update Selected Products List */
 function updateSelectedList() {
   const container = document.getElementById("selectedProductsList");
   container.innerHTML = selectedProducts
     .map(
       (product) => `
-    <div class="selected-item" data-id="${product.id}">
-      <img src="${product.image}" alt="${product.name}">
-      <span>${product.name}</span>
-      <button class="remove-btn" title="Remove">×</button>
-    </div>
-  `
+      <div class="selected-item" data-id="${product.id}">
+        <img src="${product.image}" alt="${product.name}">
+        <span>${product.name}</span>
+        <button class="remove-btn" title="Remove">×</button>
+      </div>
+    `
     )
     .join("");
 
+  // Remove buttons
   document.querySelectorAll(".remove-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const id = parseInt(e.target.closest(".selected-item").getAttribute("data-id"));
@@ -88,6 +92,7 @@ function updateSelectedList() {
   });
 }
 
+/* Filter products by category */
 categoryFilter.addEventListener("change", async (e) => {
   const products = await loadProducts();
   const selectedCategory = e.target.value;
@@ -95,10 +100,13 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
+/* Chat form (manual input placeholder) */
 chatForm.addEventListener("submit", (e) => {
   e.preventDefault();
   chatWindow.innerHTML = "Connect to the OpenAI API for a response!";
 });
+
+/* Generate Personalized Routine with OpenAI */
 document.getElementById("generateRoutine").addEventListener("click", async () => {
   if (selectedProducts.length === 0) {
     chatWindow.innerHTML = `<p>Please select products to generate a routine.</p>`;
@@ -119,14 +127,15 @@ document.getElementById("generateRoutine").addEventListener("click", async () =>
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer YOUR_OPENAI_API_KEY` // ← replace with your key
+        Authorization: `Bearer YOUR_OPENAI_API_KEY` // Replace with your key
       },
       body: JSON.stringify({
         model: "gpt-4",
         messages: [
           {
             role: "system",
-            content: "You are a skincare and beauty expert helping users build smart routines from selected L’Oréal products. Respond in a clear, structured and friendly tone."
+            content:
+              "You are a skincare and beauty expert helping users build smart routines from selected L’Oréal products. Respond in a clear, structured and friendly tone."
           },
           {
             role: "user",

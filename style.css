@@ -355,3 +355,11 @@ body {
   height: 20px;
   background: linear-gradient(to bottom, transparent, rgba(255, 0, 59, 0.85));
 }
+.chat-reply {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
