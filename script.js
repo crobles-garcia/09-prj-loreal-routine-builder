@@ -5,7 +5,7 @@ const chatWindow = document.getElementById("chatWindow");
 const generateRoutineBtn = document.getElementById("generateRoutine");
 const selectedProducts = [];
 
-/* Chat memory */
+// Chat memory
 const chatHistory = [
   {
     role: "system",
@@ -14,36 +14,36 @@ const chatHistory = [
   }
 ];
 
-/* Placeholder */
+// Show placeholder until category is selected
 productsContainer.innerHTML = `<div class="placeholder-message">Select a category to view products</div>`;
 
-/* Load product data */
+// Load product data from JSON
 async function loadProducts() {
   const response = await fetch("products.json");
   const data = await response.json();
   return data.products;
 }
 
-/* Display product cards */
+// Display product cards
 function displayProducts(products) {
   productsContainer.innerHTML = products
     .map((product) => {
       const isSelected = selectedProducts.some((p) => p.id === product.id);
       return `
-      <div class="product-card ${isSelected ? "selected" : ""}" data-id="${product.id}">
-        <div class="product-overlay">${product.description}</div>
-        <img src="${product.image}" alt="${product.name}">
-        <div class="product-info">
-          <h3>${product.name}</h3>
-          <p>${product.brand}</p>
-          <button class="toggle-btn">View Details</button>
-          <div class="description-full">${product.description}</div>
+        <div class="product-card ${isSelected ? "selected" : ""}" data-id="${product.id}">
+          <img src="${product.image}" alt="${product.name.en}">
+          <div class="product-info">
+            <h3>${product.name.en}</h3>
+            <p>${product.brand.en}</p>
+            <button class="toggle-btn">View Details</button>
+          </div>
+          <div class="product-overlay">${product.description.en}</div>
         </div>
-      </div>
-    `;
+      `;
     })
     .join("");
 
+  // Product selection/deselection
   document.querySelectorAll(".product-card").forEach((card) => {
     const productId = parseInt(card.dataset.id);
     const product = products.find((p) => p.id === productId);
@@ -63,30 +63,32 @@ function displayProducts(products) {
     });
   });
 
+  // Toggle overlay on "View Details" button
   document.querySelectorAll(".toggle-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      const card = e.target.closest(".product-card");
-      card.classList.toggle("expanded");
+      const overlay = btn.closest(".product-card").querySelector(".product-overlay");
+      overlay.classList.toggle("show-overlay");
     });
   });
 }
 
-/* Update selected products list */
+// Update the selected products section
 function updateSelectedList() {
   const container = document.getElementById("selectedProductsList");
   container.innerHTML = selectedProducts
     .map(
       (product) => `
-      <div class="selected-item" data-id="${product.id}">
-        <img src="${product.image}" alt="${product.name}">
-        <span>${product.name}</span>
-        <button class="remove-btn" title="Remove">×</button>
-      </div>
-    `
+        <div class="selected-item" data-id="${product.id}">
+          <img src="${product.image}" alt="${product.name.en}">
+          <span>${product.name.en}</span>
+          <button class="remove-btn" title="Remove">×</button>
+        </div>
+      `
     )
     .join("");
 
+  // Remove from selected
   document.querySelectorAll(".remove-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const id = parseInt(e.target.closest(".selected-item").getAttribute("data-id"));
@@ -100,7 +102,7 @@ function updateSelectedList() {
   });
 }
 
-/* Filter products */
+// Category filter
 categoryFilter.addEventListener("change", async (e) => {
   const products = await loadProducts();
   const selectedCategory = e.target.value;
@@ -108,7 +110,7 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
-/* Generate AI Routine */
+// Generate AI-powered routine
 generateRoutineBtn.addEventListener("click", async () => {
   if (selectedProducts.length === 0) {
     chatWindow.innerHTML = `<p>Please select products to generate a routine.</p>`;
@@ -116,13 +118,13 @@ generateRoutineBtn.addEventListener("click", async () => {
   }
 
   const userProducts = selectedProducts.map((product) => ({
-    name: product.name,
-    brand: product.brand,
+    name: product.name.en,
+    brand: product.brand.en,
     category: product.category,
-    description: product.description
+    description: product.description.en
   }));
 
-  const prompt = `Here are my selected products:\n\n${JSON.stringify(userProducts, null, 2)}\n\nCan you create a complete routine using these products?`;
+  const prompt = `Here are my selected products:\n\n${JSON.stringify(userProducts, null, 2)}\n\nCan you create a complete skincare routine using these products?`;
 
   chatHistory.push({ role: "user", content: prompt });
 
@@ -154,7 +156,7 @@ generateRoutineBtn.addEventListener("click", async () => {
   }
 });
 
-/* Follow-up questions */
+// Chat interaction
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
