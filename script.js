@@ -10,9 +10,7 @@ const chatHistory = [
   {
     role: "system",
     content:
-     content: 
-     "You are a beauty advisor for L'Oréal. Only recommend L'Oréal Group products (such as L'Oréal Paris, CeraVe, Vichy, La Roche-Posay, Garnier, SkinCeuticals, Kérastase, Maybelline, Lancôme, Redken, etc.). Do not mention or recommend competitor brands. You help users build skincare, haircare, makeup, or grooming routines using only products they have selected or that are part of the L'Oréal portfolio. Keep answers clear, friendly, and helpful."
-
+      "You are a skincare and beauty expert that helps users build personalized routines and answer related questions about skincare, haircare, makeup, fragrance, and grooming. Keep answers clear, friendly, and helpful."
   }
 ];
 
@@ -195,4 +193,10 @@ chatForm.addEventListener("submit", async (e) => {
     console.error("Follow-up chat failed:", error);
     chatWindow.innerHTML += `<div class="chat-reply">⚠️ Something went wrong while answering. Please try again.</div>`;
   }
+});
+document.getElementById("clearSelected").addEventListener("click", () => {
+  selectedProducts.length = 0;
+  clearSelectedStorage();
+  updateSelectedList();
+  loadProducts().then(displayProducts);
 });

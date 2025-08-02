@@ -224,6 +224,9 @@ body {
   border: 2px solid #000;
   border-radius: 8px;
 }
+.selected-products {
+  position: relative; /* required for animation positioning */
+}
 
 .selected-products h2 {
   font-size: 20px;
@@ -362,4 +365,24 @@ body {
   font-size: 15px;
   line-height: 1.6;
   white-space: pre-line;
+}
+.save-animation {
+  position: absolute;
+  top: -25px;
+  right: 20px;
+  background: #e3a535;
+  color: #000;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  opacity: 0;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 10;
+}
+
+.save-animation.show {
+  opacity: 1;
+  transform: translateY(-10px);
 }
