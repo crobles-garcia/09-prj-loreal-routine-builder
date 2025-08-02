@@ -2,19 +2,21 @@ const categoryFilter = document.getElementById("categoryFilter");
 const productsContainer = document.getElementById("productsContainer");
 const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
+const generateRoutineBtn = document.getElementById("generateRoutine");
+
 const selectedProducts = [];
 
-// Initial placeholder
+/* Placeholder */
 productsContainer.innerHTML = `<div class="placeholder-message">Select a category to view products</div>`;
 
-/* Load product data */
+/* Load products from JSON */
 async function loadProducts() {
   const response = await fetch("products.json");
   const data = await response.json();
   return data.products;
 }
 
-/* Display products */
+/* Display product cards */
 function displayProducts(products) {
   productsContainer.innerHTML = products
     .map((product) => {
@@ -34,7 +36,7 @@ function displayProducts(products) {
     })
     .join("");
 
-  // Product selection logic
+  // Card click to select/unselect
   document.querySelectorAll(".product-card").forEach((card) => {
     const productId = parseInt(card.dataset.id);
     const product = products.find((p) => p.id === productId);
@@ -48,6 +50,7 @@ function displayProducts(products) {
       } else {
         selectedProducts.splice(index, 1);
       }
+
       displayProducts(products);
       updateSelectedList();
     });
@@ -63,7 +66,7 @@ function displayProducts(products) {
   });
 }
 
-/* Update Selected Products List */
+/* Update the "Selected Products" section */
 function updateSelectedList() {
   const container = document.getElementById("selectedProductsList");
   container.innerHTML = selectedProducts
@@ -78,7 +81,6 @@ function updateSelectedList() {
     )
     .join("");
 
-  // Remove buttons
   document.querySelectorAll(".remove-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const id = parseInt(e.target.closest(".selected-item").getAttribute("data-id"));
@@ -100,14 +102,14 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
-/* Chat form (manual input placeholder) */
+/* Chatbox fallback for manual entry */
 chatForm.addEventListener("submit", (e) => {
   e.preventDefault();
   chatWindow.innerHTML = "Connect to the OpenAI API for a response!";
 });
 
-/* Generate Personalized Routine with OpenAI */
-document.getElementById("generateRoutine").addEventListener("click", async () => {
+/* Generate routine via Cloudflare Worker */
+generateRoutineBtn.addEventListener("click", async () => {
   if (selectedProducts.length === 0) {
     chatWindow.innerHTML = `<p>Please select products to generate a routine.</p>`;
     return;
@@ -120,22 +122,20 @@ document.getElementById("generateRoutine").addEventListener("click", async () =>
     description: product.description
   }));
 
-  chatWindow.innerHTML = `<p><em>Creating your personalized routine...</em></p>`;
+  chatWindow.innerHTML = `<p><em>✨ Creating your personalized routine...</em></p>`;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://09-prj-loreal-routine-builder.croblesg.workers.dev/", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer YOUR_OPENAI_API_KEY` // Replace with your key
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4", // or "gpt-3.5-turbo" if needed
         messages: [
           {
             role: "system",
-            content:
-              "You are a skincare and beauty expert helping users build smart routines from selected L’Oréal products. Respond in a clear, structured and friendly tone."
+            content: "You are a skincare and beauty expert helping users build personalized routines using selected products. Be clear, concise, and friendly."
           },
           {
             role: "user",
@@ -146,12 +146,16 @@ document.getElementById("generateRoutine").addEventListener("click", async () =>
       })
     });
 
+    if (!response.ok) {
+      throw new Error(`OpenAI request failed with status ${response.status}`);
+    }
+
     const data = await response.json();
     const aiReply = data.choices[0].message.content;
 
     chatWindow.innerHTML = `<div class="chat-reply">${aiReply.replace(/\n/g, "<br>")}</div>`;
-  } catch (err) {
-    console.error(err);
-    chatWindow.innerHTML = `<p>Something went wrong while generating your routine. Please try again.</p>`;
+  } catch (error) {
+    console.error("Routine generation failed:", error);
+    chatWindow.innerHTML = `<p>⚠️ Something went wrong while generating your routine. Please try again.</p>`;
   }
 });
