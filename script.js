@@ -1,202 +1,86 @@
+// DOM elements
+// Full updated JavaScript with image display and filtering fixes
+
+let allProducts = [];
+let selectedProducts = JSON.parse(localStorage.getItem("selectedProducts")) || [];
+
 const categoryFilter = document.getElementById("categoryFilter");
 const productsContainer = document.getElementById("productsContainer");
-const chatForm = document.getElementById("chatForm");
-const chatWindow = document.getElementById("chatWindow");
-const generateRoutineBtn = document.getElementById("generateRoutine");
-const selectedProducts = [];
+const selectedProductsList = document.getElementById("selectedProductsList");
+const clearSelectedBtn = document.getElementById("clearSelected");
+const searchInput = document.getElementById("searchInput");
 
-/* Chat memory */
-const chatHistory = [
-  {
-    role: "system",
-    content:
-      "You are a skincare and beauty expert that helps users build personalized routines and answer related questions about skincare, haircare, makeup, fragrance, and grooming. Keep answers clear, friendly, and helpful."
-  }
-];
-
-/* Placeholder */
-productsContainer.innerHTML = `<div class="placeholder-message">Select a category to view products</div>`;
-
-/* Load product data */
 async function loadProducts() {
-  const response = await fetch("products.json");
-  const data = await response.json();
-  return data.products;
+  try {
+    const response = await fetch("products.json");
+    const data = await response.json();
+    allProducts = data.products;
+    renderProducts();
+    updateSelectedList();
+  } catch (err) {
+    console.error("Failed to load products:", err);
+  }
 }
 
-/* Display product cards */
-function displayProducts(products) {
-  productsContainer.innerHTML = products
-    .map((product) => {
-      const isSelected = selectedProducts.some((p) => p.id === product.id);
-      return `
-      <div class="product-card ${isSelected ? "selected" : ""}" data-id="${product.id}">
-        <div class="product-overlay">${product.description}</div>
-        <img src="${product.image}" alt="${product.name}">
-        <div class="product-info">
-          <h3>${product.name}</h3>
-          <p>${product.brand}</p>
-          <button class="toggle-btn">View Details</button>
-          <div class="description-full">${product.description}</div>
-        </div>
-      </div>
+function renderProducts() {
+  const category = categoryFilter.value;
+  const keyword = searchInput.value.toLowerCase();
+  const filtered = allProducts.filter(p =>
+    (!category || p.category === category) &&
+    (p.name.toLowerCase().includes(keyword) || p.description.toLowerCase().includes(keyword))
+  );
+
+  productsContainer.innerHTML = "";
+  filtered.forEach(product => {
+    const card = document.createElement("div");
+    card.className = "product-card";
+    card.innerHTML = `
+      <img src="${product.image}" alt="${product.name}" class="product-image">
+      <h3>${product.name}</h3>
+      <p>${product.brand}</p>
+      <p>${product.description}</p>
+      <button onclick="toggleProduct(${product.id})">
+        ${selectedProducts.includes(product.id) ? "Remove" : "Select"}
+      </button>
     `;
-    })
-    .join("");
-
-  document.querySelectorAll(".product-card").forEach((card) => {
-    const productId = parseInt(card.dataset.id);
-    const product = products.find((p) => p.id === productId);
-
-    card.addEventListener("click", (e) => {
-      if (e.target.classList.contains("toggle-btn")) return;
-
-      const index = selectedProducts.findIndex((p) => p.id === productId);
-      if (index === -1) {
-        selectedProducts.push(product);
-      } else {
-        selectedProducts.splice(index, 1);
-      }
-
-      displayProducts(products);
-      updateSelectedList();
-    });
-  });
-
-  document.querySelectorAll(".toggle-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const card = e.target.closest(".product-card");
-      card.classList.toggle("expanded");
-    });
+    productsContainer.appendChild(card);
   });
 }
 
-/* Update selected products list */
-function updateSelectedList() {
-  const container = document.getElementById("selectedProductsList");
-  container.innerHTML = selectedProducts
-    .map(
-      (product) => `
-      <div class="selected-item" data-id="${product.id}">
-        <img src="${product.image}" alt="${product.name}">
-        <span>${product.name}</span>
-        <button class="remove-btn" title="Remove">×</button>
-      </div>
-    `
-    )
-    .join("");
-
-  document.querySelectorAll(".remove-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const id = parseInt(e.target.closest(".selected-item").getAttribute("data-id"));
-      const index = selectedProducts.findIndex((p) => p.id === id);
-      if (index !== -1) {
-        selectedProducts.splice(index, 1);
-        updateSelectedList();
-        loadProducts().then(displayProducts);
-      }
-    });
-  });
-}
-
-/* Filter products */
-categoryFilter.addEventListener("change", async (e) => {
-  const products = await loadProducts();
-  const selectedCategory = e.target.value;
-  const filteredProducts = products.filter((product) => product.category === selectedCategory);
-  displayProducts(filteredProducts);
-});
-
-/* Generate AI Routine */
-generateRoutineBtn.addEventListener("click", async () => {
-  if (selectedProducts.length === 0) {
-    chatWindow.innerHTML = `<p>Please select products to generate a routine.</p>`;
-    return;
+function toggleProduct(id) {
+  const index = selectedProducts.indexOf(id);
+  if (index > -1) {
+    selectedProducts.splice(index, 1);
+  } else {
+    selectedProducts.push(id);
   }
-
-  const userProducts = selectedProducts.map((product) => ({
-    name: product.name,
-    brand: product.brand,
-    category: product.category,
-    description: product.description
-  }));
-
-  const prompt = `Here are my selected products:\n\n${JSON.stringify(userProducts, null, 2)}\n\nCan you create a complete routine using these products?`;
-
-  chatHistory.push({ role: "user", content: prompt });
-
-  chatWindow.innerHTML = `<p><em>✨ Creating your personalized routine...</em></p>`;
-
-  try {
-    const response = await fetch("https://09-prj-loreal-routine-builder.croblesg.workers.dev/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4",
-        messages: chatHistory,
-        temperature: 0.7
-      })
-    });
-
-    const data = await response.json();
-    const aiReply = data.choices[0].message.content;
-
-    chatHistory.push({ role: "assistant", content: aiReply });
-
-    chatWindow.innerHTML = `<div class="chat-reply">${aiReply.replace(/\n/g, "<br>")}</div>`;
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-  } catch (error) {
-    console.error("Routine generation failed:", error);
-    chatWindow.innerHTML = `<p>⚠️ Something went wrong while generating your routine. Please try again.</p>`;
-  }
-});
-
-/* Follow-up questions */
-chatForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const userInput = document.getElementById("userInput").value.trim();
-  if (!userInput) return;
-
-  chatWindow.innerHTML += `<div class="chat-reply"><strong>You:</strong> ${userInput}</div>`;
-  document.getElementById("userInput").value = "";
-
-  chatWindow.innerHTML += `<div class="chat-reply"><em>Thinking...</em></div>`;
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-
-  chatHistory.push({ role: "user", content: userInput });
-
-  try {
-    const response = await fetch("https://09-prj-loreal-routine-builder.croblesg.workers.dev/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4",
-        messages: chatHistory,
-        temperature: 0.7
-      })
-    });
-
-    const data = await response.json();
-    const aiReply = data.choices[0].message.content;
-
-    chatHistory.push({ role: "assistant", content: aiReply });
-
-    chatWindow.innerHTML += `<div class="chat-reply">${aiReply.replace(/\n/g, "<br>")}</div>`;
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-  } catch (error) {
-    console.error("Follow-up chat failed:", error);
-    chatWindow.innerHTML += `<div class="chat-reply">⚠️ Something went wrong while answering. Please try again.</div>`;
-  }
-});
-document.getElementById("clearSelected").addEventListener("click", () => {
-  selectedProducts.length = 0;
-  clearSelectedStorage();
+  localStorage.setItem("selectedProducts", JSON.stringify(selectedProducts));
+  renderProducts();
   updateSelectedList();
-  loadProducts().then(displayProducts);
+}
+
+function updateSelectedList() {
+  selectedProductsList.innerHTML = "";
+  const selectedItems = allProducts.filter(p => selectedProducts.includes(p.id));
+  selectedItems.forEach(product => {
+    const div = document.createElement("div");
+    div.className = "selected-item";
+    div.innerHTML = `
+      <span>${product.name}</span>
+      <button onclick="toggleProduct(${product.id})">Remove</button>
+    `;
+    selectedProductsList.appendChild(div);
+  });
+}
+
+categoryFilter.addEventListener("change", renderProducts);
+searchInput.addEventListener("input", renderProducts);
+clearSelectedBtn.addEventListener("click", () => {
+  selectedProducts = [];
+  localStorage.removeItem("selectedProducts");
+  renderProducts();
+  updateSelectedList();
 });
+
+window.onload = loadProducts;
+
