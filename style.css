@@ -366,6 +366,7 @@ body {
   line-height: 1.6;
   white-space: pre-line;
 }
+
 .save-animation {
   position: absolute;
   top: -25px;
@@ -385,4 +386,11 @@ body {
 .save-animation.show {
   opacity: 1;
   transform: translateY(-10px);
+}
+.save-hint {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: -10px;
+  margin-bottom: 10px;
+  font-style: italic;
 }

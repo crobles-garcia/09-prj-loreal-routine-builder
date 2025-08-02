@@ -27,6 +27,13 @@
         opacity: 1;
         transform: translateY(-10px);
       }
+      .save-hint {
+        font-size: 0.9rem;
+        color: #555;
+        margin-top: -10px;
+        margin-bottom: 10px;
+        font-style: italic;
+      }
     </style>
   </head>
   <body>
@@ -55,9 +62,10 @@
 
       <div class="selected-products" style="position: relative;">
         <h2>Selected Products</h2>
+        <p class="save-hint">🛈 Your selections are automatically saved and will stay here next time you visit.</p>
         <div id="selectedProductsList"></div>
 
-        <button id="generateRoutine" class="generate-btn">
+        <button id="generateRoutine" class="generate-btn" title="Click to create a personalized routine from your selected products.">
           <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Routine
         </button>
 
@@ -66,7 +74,7 @@
         </button>
 
         <!-- Saved Animation -->
-        <div id="saveAnimation" class="save-animation">✔️ Saved</div>
+        <div id="saveAnimation" class="save-animation">✔️ Routine updated</div>
       </div>
 
       <section class="chatbox">
