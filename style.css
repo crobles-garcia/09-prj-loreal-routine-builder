@@ -354,3 +354,23 @@ body {
   opacity: 1;
   transform: translateY(-10px);
 }
+.filter-bar {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+#productSearch {
+  padding: 10px;
+  font-size: 1rem;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  width: 60%;
+  max-width: 400px;
+  transition: border-color 0.3s;
+}
+
+#productSearch:focus {
+  border-color: #ff003b;
+  outline: none;
+}
